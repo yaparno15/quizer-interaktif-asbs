@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab Asam Basa 3D & AI Tutor Kimia</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            dark: '#0f172a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Inter & Math fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Marked.js for markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- KaTeX for crisp chemical and math rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0f19;
+            color: #f3f4f6;
+            overflow-x: hidden;
+        }
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-card:hover {
+            border-color: rgba(59, 130, 246, 0.4);
+            box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.15);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        /* Pulse Animation for AI Button */
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 15px rgba(168, 85, 247, 0.4); }
+            50% { box-shadow: 0 0 25px rgba(168, 85, 247, 0.8); }
+        }
+        .ai-pulse {
+            animation: pulse-glow 2.5s infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-100 flex flex-col">
+
+<header class="sticky top-0 z-50 glass-panel border-b border-slate-800 px-4 lg:px-8 py-3">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
+                <i class="fa-solid font-bold fa-flask-vial text-xl"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg leading-tight bg-gradient-to-r from-cyan-400 via-sky-300 to-purple-300 bg-clip-text text-transparent">
+                    Soal Latihan Interaktif
+                </h1>
+                <p class="text-xs text-slate-400">Teori Asam Basa (Arrhenius, Brønsted-Lowry, Lewis)</p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-4">
+            <div class="hidden sm:flex items-center space-x-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700/50 text-xs">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span class="text-slate-300 font-medium">Agent AI Active</span>
+            </div>
+            
+            <div class="flex items-center space-x-2 bg-slate-900/90 border border-slate-700/60 rounded-xl px-3 py-1.5">
+                <i class="fa-solid fa-trophy text-amber-400 text-sm"></i>
+                <span class="text-xs font-semibold text-slate-300">Skor:</span>
+                <span id="score-display" class="text-sm font-bold text-amber-400">0 / 5</span>
+            </div>
+        </div>
+    </div>
+</header>
+
+<main class="flex-1 max-w-4xl w-full mx-auto p-4 lg:p-6 flex flex-col space-y-6">
+        
+    <div class="flex items-center justify-between">
+        <div>
+            <h2 class="text-xl font-bold text-white flex items-center">
+                <i class="fa-solid fa-list-check text-cyan-400 mr-2.5"></i> Soal Latihan & Pembahasan AI
+            </h2>
+        </div>
+        <button onclick="resetAllQuiz()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-3 py-1.5 rounded-lg transition flex items-center space-x-1.5">
+            <i class="fa-solid fa-rotate-left"></i>
+            <span>Reset Jawaban</span>
+        </button>
+    </div>
+
+    <!-- Questions List Container -->
+    <div id="questions-list" class="space-y-6">
+        <!-- Questions rendered via JS -->
+    </div>
+
+    <!-- Ask Gemini Freeform Tutor Box -->
+    <div class="glass-panel rounded-2xl p-5 border border-purple-500/30 bg-gradient-to-b from-purple-950/20 to-slate-900/60 space-y-3">
+            <div class="flex items-center space-x-2 text-purple-300">
+                <i class="fa-solid fa-robot text-lg"></i>
+                <h3 class="font-bold text-sm">Tanya Guru Kimia AI (Agent AI)</h3>
+            </div>
+            <p class="text-xs text-slate-400">Punya pertanyaan lain seputar Asam Basa atau butuh contoh soal baru? Tanyakan langsung di sini!</p>
+            <div class="flex space-x-2">
+                <input type="text" id="ai-custom-prompt" placeholder="Contoh: Jelaskan mengapa BF3 tergolong Asam Lewis..." 
+                       class="flex-1 bg-slate-950/80 border border-slate-700/80 rounded-xl px-3.5 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500">
+                <button onclick="askCustomAI()" id="btn-ask-custom" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-medium text-xs px-4 py-2 rounded-xl shadow-md flex items-center space-x-1.5 transition">
+                    <span>Kirim</span>
+                    <i class="fa-solid fa-paper-plane text-xs"></i>
+                </button>
+            </div>
+            <div id="custom-ai-response" class="hidden text-xs bg-slate-950/90 border border-purple-900/50 p-4 rounded-xl text-slate-300 leading-relaxed max-h-60 overflow-y-auto"></div>
+        </div>
+
+    </section>
+</main>
+
+<script>
+const questionsData = [
+    {
+        id: 1,
+        difficulty: 'Mudah',
+        diffColor: 'emerald',
+        topic: 'Teori Arrhenius',
+        question: 'Menurut Arrhenius, basa adalah zat yang dalam air...',
+        options: [
+            { key: 'A', text: 'melepaskan ion H⁺' },
+            { key: 'B', text: 'melepaskan ion OH⁻' },
+            { key: 'C', text: 'menerima proton' },
+            { key: 'D', text: 'mendonorkan pasangan elektron' },
+            { key: 'E', text: 'menerima pasangan elektron' }
+        ],
+        correctKey: 'B',
+        phEffect: 12.0 // Basic pH for 3D simulation effect
+    },
+    {
+        id: 2,
+        difficulty: 'Mudah',
+        diffColor: 'emerald',
+        topic: 'Valensi Asam',
+        question: 'Valensi asam dari H₃PO₄ (Asam Fosfat) adalah ...',
+        options: [
+            { key: 'A', text: '1' },
+            { key: 'B', text: '2' },
+            { key: 'C', text: '3' },
+            { key: 'D', text: '4' },
+            { key: 'E', text: '6' }
+        ],
+        correctKey: 'C',
+        phEffect: 2.5 // Acidic pH
+    },
+    {
+        id: 3,
+        difficulty: 'Sedang',
+        diffColor: 'amber',
+        topic: 'Pasangan Konjugasi (Brønsted-Lowry)',
+        question: 'Pada reaksi kesetimbangan: HCN + H₂O ⇌ CN⁻ + H₃O⁺, spesi yang bertindak sebagai basa konjugasinya adalah ....',
+        options: [
+            { key: 'A', text: 'HCN' },
+            { key: 'B', text: 'H₂O' },
+            { key: 'C', text: 'H₃O⁺' },
+            { key: 'D', text: 'CN⁻' },
+            { key: 'E', text: 'OH⁻' }
+        ],
+        correctKey: 'D',
+        phEffect: 4.5
+    },
+    {
+        id: 4,
+        difficulty: 'Sedang',
+        diffColor: 'amber',
+        topic: 'Sifat Amfiprotik',
+        question: 'Spesi berikut yang bersifat amfiprotik (dapat bertindak sebagai asam maupun basa Brønsted-Lowry) adalah ....',
+        options: [
+            { key: 'A', text: 'H₂PO₄⁻' },
+            { key: 'B', text: 'Br⁻' },
+            { key: 'C', text: 'NO₃⁻' },
+            { key: 'D', text: 'NH₄⁺' },
+            { key: 'E', text: 'PO₄³⁻' }
+        ],
+        correctKey: 'A',
+        phEffect: 6.8
+    },
+    {
+        id: 5,
+        difficulty: 'Susah',
+        diffColor: 'rose',
+        topic: 'Teori Asam-Basa Lewis',
+        question: 'Pada pembentukan ikatan kompleks: Fe³⁺ + 6H₂O → [Fe(H₂O)₆]³⁺, asam Lewis dan basa Lewis berturut-turut adalah ....',
+        options: [
+            { key: 'A', text: 'H₂O dan H₂O' },
+            { key: 'B', text: 'Fe³⁺ dan Fe³⁺' },
+            { key: 'C', text: 'H₂O dan Fe³⁺' },
+            { key: 'D', text: 'tidak ada asam maupun basa Lewis' },
+            { key: 'E', text: 'Fe³⁺ dan H₂O' }
+        ],
+        correctKey: 'E',
+        phEffect: 3.0
+    }
+];
+
+// User answers state tracker
+let userAnswers = {};
+let score = 0;
+
+function renderQuestions() {
+    const container = document.getElementById('questions-list');
+    container.innerHTML = '';
+
+    questionsData.forEach((q) => {
+        const badgeColors = {
+            emerald: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
+            amber: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+            rose: 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+        };
+
+        const cardHtml = `
+            <div id="q-card-${q.id}" class="glass-card rounded-2xl p-5 relative overflow-hidden">
+                <!-- Header badge & topic -->
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs font-bold px-2.5 py-0.5 rounded-full border ${badgeColors[q.diffColor]}">
+                            ${q.difficulty}
+                        </span>
+                        <span class="text-xs text-slate-400 font-medium">Topic: ${q.topic}</span>
+                    </div>
+                    <span class="text-xs font-semibold text-slate-500">Soal #${q.id}</span>
+                </div>
+
+                <!-- Question Text -->
+                <h3 class="text-sm lg:text-base font-semibold text-slate-100 mb-4 leading-relaxed">
+                    ${q.question}
+                </h3>
+
+                <!-- Options grid -->
+                <div class="space-y-2 mb-4">
+                    ${q.options.map(opt => `
+                        <button onclick="selectOption(${q.id}, '${opt.key}')" 
+                                id="opt-btn-${q.id}-${opt.key}"
+                                class="w-full text-left p-3 rounded-xl border border-slate-700/60 bg-slate-800/40 hover:bg-slate-800/80 hover:border-slate-600 transition duration-200 flex items-center space-x-3 text-xs lg:text-sm">
+                            <span class="w-6 h-6 rounded-lg bg-slate-700/60 border border-slate-600/80 flex items-center justify-center font-bold text-slate-300 text-xs shrink-0 option-key">
+                                ${opt.key}
+                            </span>
+                            <span class="text-slate-200">${opt.text}</span>
+                        </button>
+                    `).join('')}
+                </div>
+
+                <!-- Action Controls -->
+                <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800">
+                    <div class="flex items-center space-x-2">
+                        <button onclick="checkUserAnswer(${q.id})" class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-semibold text-slate-200 transition">
+                            <i class="fa-solid fa-check mr-1.5 text-emerald-400"></i> Cek Jawaban
+                        </button>
+                    </div>
+
+                    <!-- AI Auto Answer & Explain Button -->
+                    <button onclick="generateAIAnswer(${q.id})" id="ai-btn-${q.id}"
+                            class="ai-pulse px-4 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-bold text-xs shadow-lg flex items-center space-x-2 transition transform hover:scale-[1.02]">
+                        <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
+                        <span>Jawab & Bahas Otomatis (AI)</span>
+                    </button>
+                </div>
+
+                <!-- Answer Status Banner -->
+                <div id="status-banner-${q.id}" class="hidden mt-3 p-3 rounded-xl text-xs font-medium flex items-center space-x-2"></div>
+
+                <!-- AI Detailed Explanation Output Box -->
+                <div id="ai-box-${q.id}" class="hidden mt-4 p-4 rounded-xl bg-slate-950/90 border border-purple-900/60 text-xs text-slate-300 space-y-2">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2 text-purple-300 font-bold">
+                        <span class="flex items-center">
+                            <i class="fa-solid fa-brain mr-2 text-cyan-400"></i> Analisis Agent AI
+                        </span>
+                    </div>
+                    <div id="ai-content-${q.id}" class="prose prose-invert prose-xs max-w-none leading-relaxed">
+                        <!-- AI content output -->
+                    </div>
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', cardHtml);
+    });
+}
+
+function selectOption(qId, key) {
+    userAnswers[qId] = key;
+    const q = questionsData.find(item => item.id === qId);
+
+    // Reset styles for options in this question
+    q.options.forEach(opt => {
+        const btn = document.getElementById(`opt-btn-${qId}-${opt.key}`);
+        btn.className = 'w-full text-left p-3 rounded-xl border border-slate-700/60 bg-slate-800/40 hover:bg-slate-800/80 hover:border-slate-600 transition duration-200 flex items-center space-x-3 text-xs lg:text-sm';
+    });
+
+    // Highlight chosen option
+    const chosenBtn = document.getElementById(`opt-btn-${qId}-${key}`);
+    chosenBtn.className = 'w-full text-left p-3 rounded-xl border-2 border-indigo-500 bg-indigo-950/40 flex items-center space-x-3 text-xs lg:text-sm font-medium';
+}
+
+function checkUserAnswer(qId) {
+    const selected = userAnswers[qId];
+    const q = questionsData.find(item => item.id === qId);
+    const banner = document.getElementById(`status-banner-${qId}`);
+
+    if (!selected) {
+        banner.className = 'mt-3 p-3 rounded-xl text-xs font-medium bg-amber-950/60 border border-amber-800/60 text-amber-300 flex items-center space-x-2';
+        banner.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i><span>Pilih salah satu jawaban terlebih dahulu!</span>`;
+        banner.classList.remove('hidden');
+        return;
+    }
+
+    const isCorrect = selected === q.correctKey;
+    
+    // Update score
+    if (isCorrect) {
+        banner.className = 'mt-3 p-3 rounded-xl text-xs font-medium bg-emerald-950/70 border border-emerald-800/80 text-emerald-300 flex items-center space-x-2';
+        banner.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400 text-sm"></i><span><b>Benar!</b> Jawaban Anda (${selected}) tepat sekali.</span>`;
+        
+        // Highlight option as green
+        const btn = document.getElementById(`opt-btn-${qId}-${selected}`);
+        btn.className = 'w-full text-left p-3 rounded-xl border-2 border-emerald-500 bg-emerald-950/50 flex items-center space-x-3 text-xs lg:text-sm font-semibold text-emerald-200';
+    } else {
+        banner.className = 'mt-3 p-3 rounded-xl text-xs font-medium bg-rose-950/70 border border-rose-800/80 text-rose-300 flex items-center space-x-2';
+        banner.innerHTML = `<i class="fa-solid fa-circle-xmark text-rose-400 text-sm"></i><span><b>Belum Tepat.</b> Jawaban Anda: ${selected}. Kunci yang benar: <b>${q.correctKey}</b>.</span>`;
+
+        // Highlight option as red
+        const btn = document.getElementById(`opt-btn-${qId}-${selected}`);
+        btn.className = 'w-full text-left p-3 rounded-xl border-2 border-rose-500 bg-rose-950/50 flex items-center space-x-3 text-xs lg:text-sm font-medium text-rose-200';
+    }
+    banner.classList.remove('hidden');
+    calculateTotalScore();
+}
+
+function calculateTotalScore() {
+    let correctCount = 0;
+    questionsData.forEach(q => {
+        if (userAnswers[q.id] === q.correctKey) {
+            correctCount++;
+        }
+    });
+    document.getElementById('score-display').innerText = `${correctCount} / ${questionsData.length}`;
+}
+
+function resetAllQuiz() {
+    userAnswers = {};
+    calculateTotalScore();
+    renderQuestions();
+}
+
+// Helper to sanitize LaTeX chemical formulas into clean HTML sub/sup
+function cleanChemFormula(text) {
+    if (!text) return '';
+    return text
+        // Clean up LaTeX syntax like $H_3O^+$ or H_2SO_4 into HTML sub/sup
+        .replace(/\$([^$]+)\$/g, '$1') // remove dollar wrappers
+        .replace(/\\rightarrow/g, '→')
+        .replace(/\\rightleftharpoons/g, '⇌')
+        .replace(/\_\{([^}]+)\}/g, '<sub>$1</sub>')
+        .replace(/\_([0-9a-zA-Z])/g, '<sub>$1</sub>')
+        .replace(/\^\{([^}]+)\}/g, '<sup>$1</sup>')
+        .replace(/\^([\+\-0-9a-zA-Z]+)/g, '<sup>$1</sup>');
+}
+
+async function generateAIAnswer(qId) {
+    const q = questionsData.find(item => item.id === qId);
+    const aiBox = document.getElementById(`ai-box-${qId}`);
+    const aiContent = document.getElementById(`ai-content-${qId}`);
+
+    aiBox.classList.remove('hidden');
+    aiContent.innerHTML = `
+        <div class="flex items-center space-x-3 py-2 text-purple-400">
+            <i class="fa-solid fa-spinner fa-spin text-lg"></i>
+            <span>Agent AI sedang menganalisis dan meringkas pembahasan...</span>
+        </div>
+    `;
+
+    selectOption(qId, q.correctKey);
+
+    const promptText = `
+Anda adalah Guru Kimia SMA. Berikan PEMBAHASAN SINGKAT, RINGKAS, DAN RINGKAS untuk soal berikut (maksimal 3-4 kalimat ringkas):
+
+Topik: ${q.topic}
+Soal: "${q.question}"
+Pilihan Jawaban:
+${q.options.map(o => `${o.key}. ${o.text}`).join('\n')}
+
+Petunjuk Format:
+1. **Kunci Jawaban**: [Sebutkan Opsi dan teksnya]
+2. **Ringkasan Alasan**: Jelaskan secara langsung dan singkat (2-3 kalimat saja) mengapa jawaban ini benar.
+3. Jangan gunakan sintaks LaTeX rumit dengan simbol dollar ($) atau kurung kurawal ({}), tuliskan rumus kimia secara bersih dan mudah dibaca.
+`;
+
+    const systemPrompt = "Berikan pembahasan kimia yang sangat ringkas, padat, akurat, dan bersih tanpa simbol format LaTeX yang membingungkan.";
+
+    try {
+        const apiKey = ""; 
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+        const payload = {
+            contents: [{ parts: [{ text: promptText }] }],
+            systemInstruction: { parts: [{ text: systemPrompt }] }
+        };
+
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP Error status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const responseText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (responseText) {
+            const formattedText = cleanChemFormula(responseText);
+            aiContent.innerHTML = marked.parse(formattedText);
+            
+            // Render KaTeX if any remaining math syntax exists
+            if (window.renderMathInElement) {
+                renderMathInElement(aiContent, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false}
+                    ],
+                    throwOnError: false
+                });
+            }
+            checkUserAnswer(qId);
+        } else {
+            aiContent.innerHTML = `<span class="text-rose-400"><i class="fa-solid fa-circle-exclamation mr-1"></i> Gagal memuat pembahasan AI.</span>`;
+        }
+    } catch (err) {
+        console.error("AI Generation Error:", err);
+        const fallbackText = cleanChemFormula(`
+**Kunci Jawaban**: **${q.correctKey}** - ${q.options.find(o => o.key === q.correctKey).text}
+
+**Ringkasan Pembahasan**:
+Soal ini menguji konsep **${q.topic}**. Pilihan **${q.correctKey}** adalah jawaban yang paling tepat berdasarkan prinsip kesetimbangan kimia dan definisi asam-basa yang berlaku.
+        `);
+        aiContent.innerHTML = marked.parse(fallbackText);
+        checkUserAnswer(qId);
+    }
+}
+
+async function askCustomAI() {
+    const inputEl = document.getElementById('ai-custom-prompt');
+    const responseBox = document.getElementById('custom-ai-response');
+    const query = inputEl.value.trim();
+
+    if (!query) return;
+
+    responseBox.classList.remove('hidden');
+    responseBox.innerHTML = `
+        <div class="flex items-center space-x-2 text-purple-400">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <span>Menghubungi Agent AI...</span>
+        </div>
+    `;
+
+    try {
+        const apiKey = "";
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+        const payload = {
+            contents: [{ parts: [{ text: query }] }],
+            systemInstruction: {
+                parts: [{ text: `Anda adalah Guru Kimia AI yang KHUSUS memfokuskan pembahasan pada materi Kimia (terutama Asam Basa: Arrhenius, Brønsted-Lowry, dan Lewis).
+
+ATURAN KETAT BANTUAN SISWA:
+1. Periksa apakah pertanyaan pengguna berhubungan dengan topik Kimia atau Asam Basa.
+2. JIKA PERTANYAAN TIDAK RELEVAN DENGAN KIMIA (misalnya koding, percakapan umum, berita, olahraga, sejarah umum, matematika non-kimia, dll.):
+   - Anda HARUS MENOLAK memberikan jawaban atas pertanyaan tersebut.
+   - Sampaikan penolakan dengan sopan, contoh: "Maaf, saya adalah Guru Kimia AI yang khusus diprogram untuk menjawab pertanyaan seputar materi Kimia dan Asam Basa. Silakan ajukan pertanyaan yang berkaitan dengan topik tersebut!"
+3. JIKA PERTANYAAN RELEVAN DENGAN KIMIA:
+   - Jawab dengan jelas, singkat, padat, dan mudah dipahami.
+   - Jangan gunakan simbol LaTeX mentah ($ atau {}) yang membingungkan.` }]
+            }
+        };
+
+        const res = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (text) {
+            const cleanText = cleanChemFormula(text);
+            responseBox.innerHTML = marked.parse(cleanText);
+            if (window.renderMathInElement) {
+                renderMathInElement(responseBox, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false}
+                    ],
+                    throwOnError: false
+                });
+            }
+        } else {
+            responseBox.innerText = "Maaf, tidak mendapat respon dari AI.";
+        }
+    } catch (e) {
+        responseBox.innerText = "Terjadi kesalahan saat memproses pertanyaan Anda.";
+    }
+}
+
+// On Window Load initialization
+window.onload = function() {
+    renderQuestions();
+};
+</script>
+
+</body>
+</html>
